@@ -135,6 +135,7 @@ src/generated/
 .dockerignore
 docker-compose.override.yml
 
+# Memory bank (development context) - Commented out to include in repository
 memory-bank/
 pdr.md
 

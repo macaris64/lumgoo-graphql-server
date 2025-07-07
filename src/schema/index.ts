@@ -14,4 +14,4 @@ const loadSchema = (filename: string): string => {
 export const typeDefs = [
   loadSchema('base.graphql'),
   loadSchema('health.graphql'),
-].join('\n'); 
+].join('\n');

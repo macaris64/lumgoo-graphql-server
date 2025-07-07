@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks..."
+
+# Generate GraphQL types first
+echo "📋 Generating GraphQL types..."
+npm run codegen
+
+# Run lint-staged for changed files
+echo "🧹 Running lint-staged..."
+npx lint-staged
+
+# Run comprehensive checks
+echo "🔎 Running TypeScript type checking..."
+npm run typecheck
+
+echo "🏗️ Testing build process..."
+npm run build
+
+echo "🧪 Running unit tests..."
+npm run test:unit
+
+echo "✅ All pre-commit checks passed!" 
