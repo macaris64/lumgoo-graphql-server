@@ -25,6 +25,9 @@ jobs:
       - name: 📋 Install dependencies
         run: npm ci
 
+      - name: 🔧 Generate GraphQL types
+        run: npm run codegen
+
       - name: 🔍 Run ESLint
         run: npm run lint
 
@@ -59,6 +62,9 @@ jobs:
 
       - name: 📋 Install dependencies
         run: npm ci
+
+      - name: 🔧 Generate GraphQL types
+        run: npm run codegen
 
       - name: 🧪 Run unit tests
         run: npm run test:unit
@@ -201,6 +207,9 @@ jobs:
 
       - name: 📋 Install dependencies
         run: npm ci
+
+      - name: 🔧 Generate GraphQL types
+        run: npm run codegen
 
       - name: 🚀 Start server for performance test
         run: |
