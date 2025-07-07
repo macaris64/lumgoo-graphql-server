@@ -14,7 +14,7 @@ A production-ready GraphQL server built with Node.js, TypeScript, and Apollo Ser
 
 ## 🛠️ Tech Stack
 
-- **Runtime**: Node.js 18+
+- **Runtime**: Node.js 20+
 - **Language**: TypeScript
 - **GraphQL**: Apollo Server 4
 - **Testing**: Jest with GraphQL testing utilities
