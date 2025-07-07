@@ -27,9 +27,12 @@ async function startServer(): Promise<void> {
       },
     });
 
+    // eslint-disable-next-line no-console
     console.log(`🚀 Server ready at: ${url}`);
+    // eslint-disable-next-line no-console
     console.log(`📊 GraphQL Playground: ${url}graphql`);
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('❌ Error starting server:', error);
     process.exit(1);
   }
@@ -37,5 +40,6 @@ async function startServer(): Promise<void> {
 
 // Start the server if this file is run directly
 if (require.main === module) {
+  // eslint-disable-next-line no-console
   startServer().catch(console.error);
-} 
+}
