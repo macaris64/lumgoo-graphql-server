@@ -13,6 +13,9 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Generate GraphQL types before building
+RUN npm run codegen
+
 # Build the application
 RUN npm run build
 
