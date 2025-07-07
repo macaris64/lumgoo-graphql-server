@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # GraphQL Server
+  graphql-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lumgoo-graphql-server
+    ports:
+      - '${PORT:-4000}:4000'
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=${PORT:-4000}
+      - GRAPHQL_INTROSPECTION=${GRAPHQL_INTROSPECTION:-true}
+    volumes:
+      # Mount source code for development (comment out for production)
+      - .:/app
+      - /app/node_modules
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:4000/graphql?query={health{status}}', (res) => { res.statusCode === 200 ? process.exit(0) : process.exit(1) }).on('error', () => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - lumgoo-network
+
+  # Optional: GraphQL Playground (for development)
+  graphql-playground:
+    image: graphql-playground/graphql-playground:latest
+    container_name: lumgoo-graphql-playground
+    ports:
+      - '3000:3000'
+    environment:
+      - ENDPOINT=http://localhost:4000/graphql
+    profiles:
+      - development
+    networks:
+      - lumgoo-network
+
+networks:
+  lumgoo-network:
+    driver: bridge
+
+volumes:
+  node_modules:

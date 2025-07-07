@@ -1,0 +1,6 @@
+"""
+Base Query type - all queries extend this
+"""
+type Query {
+  _empty: String
+} 

@@ -1,0 +1,26 @@
+"""
+Health check response type
+"""
+type HealthResponse {
+  """
+  Server status indicator
+  """
+  status: String!
+  
+  """
+  Server uptime in seconds
+  """
+  uptime: Float!
+  
+  """
+  Current timestamp
+  """
+  timestamp: String!
+}
+
+extend type Query {
+  """
+  Health check endpoint for monitoring and load balancers
+  """
+  health: HealthResponse!
+} 
