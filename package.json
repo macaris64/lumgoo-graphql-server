@@ -19,6 +19,7 @@
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "format": "prettier --write src/**/*.ts",
+    "format:check": "prettier --check src/**/*.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist",
     "docker:build": "docker build -t lumgoo-graphql-server .",

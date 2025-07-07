@@ -1,0 +1,269 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    branches: [master, develop]
+
+jobs:
+  # Quality Gates - Linting, Type Checking, and Code Quality
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📋 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Run ESLint
+        run: npm run lint
+
+      - name: 📝 Run Prettier check
+        run: npm run format:check
+
+      - name: 🔎 Run TypeScript type checking
+        run: npm run typecheck
+
+      - name: 🏗️ Test build process
+        run: npm run build
+
+  # Testing - Unit and Integration Tests
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    needs: quality-gates
+
+    strategy:
+      matrix:
+        node-version: [18, 20]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: 📋 Install dependencies
+        run: npm ci
+
+      - name: 🧪 Run unit tests
+        run: npm run test:unit
+
+      - name: 🔗 Run integration tests
+        run: npm run test:integration
+
+      - name: 📊 Run test coverage
+        run: npm run test:coverage
+
+      - name: 📈 Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  # GraphQL Schema Validation
+  schema-validation:
+    name: GraphQL Schema Validation
+    runs-on: ubuntu-latest
+    needs: quality-gates
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📋 Install dependencies
+        run: npm ci
+
+      - name: 🔧 Generate GraphQL types
+        run: npm run codegen
+
+      - name: ✅ Verify generated types
+        run: |
+          if [ ! -f "src/generated/resolvers-types.ts" ]; then
+            echo "❌ GraphQL types not generated properly"
+            exit 1
+          fi
+          echo "✅ GraphQL types generated successfully"
+
+  # Docker Build and Test
+  docker:
+    name: Docker Build & Test
+    runs-on: ubuntu-latest
+    needs: [quality-gates, test]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🏗️ Build Docker image
+        run: docker build -t lumgoo-graphql-server:test .
+
+      - name: 🧪 Test Docker container
+        run: |
+          # Start container in background
+          docker run -d -p 4000:4000 --name test-container lumgoo-graphql-server:test
+
+          # Wait for container to be ready
+          sleep 10
+
+          # Test health check endpoint
+          response=$(curl -s -X POST http://localhost:4000/graphql \
+            -H "Content-Type: application/json" \
+            -d '{"query": "{ health { status } }"}')
+
+          echo "Health check response: $response"
+
+          # Verify response contains expected data
+          if echo "$response" | grep -q '"status":"UP"'; then
+            echo "✅ Docker container health check passed"
+          else
+            echo "❌ Docker container health check failed"
+            docker logs test-container
+            exit 1
+          fi
+
+          # Cleanup
+          docker stop test-container
+          docker rm test-container
+
+  # Security Scanning
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: quality-gates
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📋 Install dependencies
+        run: npm ci
+
+      - name: 🔒 Run npm audit
+        run: npm audit --audit-level moderate
+
+      - name: 🛡️ Run Snyk security scan
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+  # Performance Test
+  performance:
+    name: Performance Test
+    runs-on: ubuntu-latest
+    needs: [test, docker]
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📋 Install dependencies
+        run: npm ci
+
+      - name: 🚀 Start server for performance test
+        run: |
+          npm run build
+          npm start &
+          sleep 5
+
+      - name: ⚡ Run performance test
+        run: |
+          # Simple load test using curl
+          echo "Running basic performance test..."
+          for i in {1..10}; do
+            response_time=$(curl -w "%{time_total}" -s -o /dev/null -X POST http://localhost:4000/graphql \
+              -H "Content-Type: application/json" \
+              -d '{"query": "{ health { status uptime timestamp } }"}')
+            echo "Request $i: ${response_time}s"
+          done
+
+  # Deployment (on master branch only)
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: [quality-gates, test, schema-validation, docker, security]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Deploy notification
+        run: |
+          echo "🚀 Deployment would happen here"
+          echo "✅ All quality gates passed"
+          echo "🐳 Docker image ready for deployment"
+          echo "📊 Test coverage: Check coverage report"
+
+      # Add your deployment steps here:
+      # - Docker registry push
+      # - Kubernetes deployment
+      # - Cloud provider deployment
+      # - etc.
+
+  # Notification
+  notify:
+    name: Notification
+    runs-on: ubuntu-latest
+    needs: [quality-gates, test, schema-validation, docker, security]
+    if: always()
+
+    steps:
+      - name: 📢 Build Status Notification
+        run: |
+          if [ "${{ needs.quality-gates.result }}" == "success" ] && \
+             [ "${{ needs.test.result }}" == "success" ] && \
+             [ "${{ needs.schema-validation.result }}" == "success" ] && \
+             [ "${{ needs.docker.result }}" == "success" ] && \
+             [ "${{ needs.security.result }}" == "success" ]; then
+            echo "✅ All CI/CD pipeline steps completed successfully!"
+          else
+            echo "❌ Some CI/CD pipeline steps failed"
+            echo "Quality Gates: ${{ needs.quality-gates.result }}"
+            echo "Tests: ${{ needs.test.result }}"
+            echo "Schema Validation: ${{ needs.schema-validation.result }}"
+            echo "Docker: ${{ needs.docker.result }}"
+            echo "Security: ${{ needs.security.result }}"
+          fi
