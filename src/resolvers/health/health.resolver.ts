@@ -6,11 +6,11 @@ import type { Context } from '../../types/context';
  * Returns server health status, uptime, and timestamp
  */
 export const healthResolver: ResolverFn<HealthResponse, {}, Context, {}> = async (
-  _parent,
-  _args,
-  _context,
-  _info
-) => {
+  _parent: unknown,
+  _args: {},
+  _context: Context,
+  _info: unknown
+): Promise<HealthResponse> => {
   return {
     status: 'UP',
     uptime: process.uptime(),
