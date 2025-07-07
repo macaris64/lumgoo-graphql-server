@@ -3,6 +3,27 @@ import { gql } from 'graphql-tag';
 import { typeDefs } from '../../src/schema';
 import { resolvers } from '../../src/resolvers';
 import type { Context } from '../../src/types/context';
+import type { GraphQLError } from 'graphql';
+
+// Test-specific types
+interface HealthResponse {
+  status: string;
+  uptime: number;
+  timestamp: string;
+}
+
+interface GraphQLTestResponse {
+  health?: HealthResponse;
+  __schema?: {
+    types: Array<{ name: string }>;
+  };
+}
+
+interface GraphQLErrorResponse {
+  message: string;
+  locations?: Array<{ line: number; column: number }>;
+  path?: Array<string | number>;
+}
 
 describe('GraphQL Integration Tests', () => {
   let testServer: ApolloServer<Context>;
@@ -41,7 +62,7 @@ describe('GraphQL Integration Tests', () => {
       if (response.body.kind === 'single') {
         expect(response.body.singleResult.errors).toBeUndefined();
         expect(response.body.singleResult.data?.health).toBeDefined();
-        const health = response.body.singleResult.data?.health as any;
+        const health = response.body.singleResult.data?.health as HealthResponse;
         expect(health.status).toBe('UP');
         expect(typeof health.uptime).toBe('number');
         expect(health.uptime).toBeGreaterThan(0);
@@ -68,7 +89,7 @@ describe('GraphQL Integration Tests', () => {
       expect(response.body.kind).toBe('single');
       if (response.body.kind === 'single') {
         expect(response.body.singleResult.errors).toBeUndefined();
-        const health = response.body.singleResult.data?.health as any;
+        const health = response.body.singleResult.data?.health as HealthResponse;
         expect(health.status).toBe('UP');
         expect(health.uptime).toBeUndefined();
         expect(health.timestamp).toBeUndefined();
@@ -119,8 +140,9 @@ describe('GraphQL Integration Tests', () => {
       expect(response.body.kind).toBe('single');
       if (response.body.kind === 'single') {
         expect(response.body.singleResult.errors).toBeDefined();
-        const errors = response.body.singleResult.errors as any[];
-        expect(errors[0].message).toContain('Cannot query field "nonExistentField"');
+        const errors = response.body.singleResult.errors as GraphQLError[];
+        expect(errors).toHaveLength(1);
+        expect(errors[0]?.message).toContain('Cannot query field "nonExistentField"');
       }
     });
   });

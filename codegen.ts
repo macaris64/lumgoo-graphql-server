@@ -1,5 +1,10 @@
 import type { CodegenConfig } from '@graphql-codegen/cli';
 
+// JSON value type that covers all possible JSON values
+type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
+type JsonObject = { [key: string]: JsonValue };
+type JsonArray = JsonValue[];
+
 const config: CodegenConfig = {
   schema: './src/schema/**/*.graphql',
   generates: {
@@ -8,7 +13,7 @@ const config: CodegenConfig = {
       config: {
         scalars: {
           DateTime: 'string',
-          JSON: 'Record<string, any>'
+          JSON: '../types/json#JsonObject'
         },
         enumsAsTypes: true,
         constEnums: true,
@@ -20,7 +25,7 @@ const config: CodegenConfig = {
       config: {
         scalars: {
           DateTime: 'string',
-          JSON: 'Record<string, any>'
+          JSON: '../types/json#JsonObject'
         },
         enumsAsTypes: true,
         constEnums: true,
