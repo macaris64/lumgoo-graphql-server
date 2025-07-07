@@ -8,4 +8,4 @@ export const resolvers: Resolvers = {
   Query: {
     health: healthResolver,
   },
-}; 
+};
