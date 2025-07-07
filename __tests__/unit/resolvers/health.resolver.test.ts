@@ -1,5 +1,6 @@
 import { healthResolver } from '../../../src/resolvers/health/health.resolver';
 import type { Context } from '../../../src/types/context';
+import type { GraphQLResolveInfo } from 'graphql';
 
 describe('Health Resolver', () => {
   describe('health query', () => {
@@ -8,10 +9,10 @@ describe('Health Resolver', () => {
       const mockParent = {};
       const mockArgs = {};
       const mockContext: Context = {};
-      const mockInfo = {} as any;
+      const mockInfo: Partial<GraphQLResolveInfo> = { fieldName: 'health' };
       
       // When
-      const result = await healthResolver(mockParent, mockArgs, mockContext, mockInfo);
+      const result = await healthResolver(mockParent, mockArgs, mockContext, mockInfo as GraphQLResolveInfo);
       
       // Then
       expect(result.status).toBe('UP');
@@ -24,10 +25,10 @@ describe('Health Resolver', () => {
       const mockParent = {};
       const mockArgs = {};
       const mockContext: Context = {};
-      const mockInfo = {} as any;
+      const mockInfo: Partial<GraphQLResolveInfo> = { fieldName: 'health' };
       
       // When
-      const result = await healthResolver(mockParent, mockArgs, mockContext, mockInfo);
+      const result = await healthResolver(mockParent, mockArgs, mockContext, mockInfo as GraphQLResolveInfo);
       
       // Then
       expect(typeof result.uptime).toBe('number');
@@ -39,11 +40,11 @@ describe('Health Resolver', () => {
       const mockParent = {};
       const mockArgs = {};
       const mockContext: Context = {};
-      const mockInfo = {} as any;
+      const mockInfo: Partial<GraphQLResolveInfo> = { fieldName: 'health' };
       const beforeTime = new Date();
       
       // When
-      const result = await healthResolver(mockParent, mockArgs, mockContext, mockInfo);
+      const result = await healthResolver(mockParent, mockArgs, mockContext, mockInfo as GraphQLResolveInfo);
       const afterTime = new Date();
       
       // Then
