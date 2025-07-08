@@ -2,6 +2,7 @@ import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import { typeDefs } from './schema';
 import { resolvers } from './resolvers';
+import { createGraphQLErrorFormatter } from './errors/error-handler';
 import type { Context } from './types/context';
 
 /**
@@ -12,6 +13,7 @@ const server = new ApolloServer<Context>({
   resolvers,
   introspection: process.env.GRAPHQL_INTROSPECTION === 'true',
   includeStacktraceInErrorResponses: process.env.NODE_ENV === 'development',
+  formatError: createGraphQLErrorFormatter(),
 });
 
 /**
